@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   Mic, PenTool, Music, Gauge, Scale, Eye, Clock, Zap, Ear, Binary, Map, 
   CheckCircle2, BrainCircuit, Calculator, TrainFront, Camera, Palette, 
-  ScanFace, BookOpen, Sparkles, ChefHat, Droplets, FlaskConical, Cpu, Grid3X3, Rocket, Sword, Sprout, Hammer
+  ScanFace, BookOpen, Sparkles, ChefHat, Droplets, FlaskConical, Cpu, Grid3X3, Rocket, Sword, Sprout, Hammer, Scissors
 } from 'lucide-react';
 
 // Game Imports
@@ -36,6 +36,7 @@ import { StarCatcherMode } from './StarCatcherMode';
 import { NeonBladeMode } from './NeonBladeMode';
 import { GardenMode } from './GardenMode';
 import { HandymanMode } from './HandymanMode';
+import { StyleStudioMode } from './StyleStudioMode';
 
 export type GameCategory = 'Language' | 'Math' | 'Brain' | 'Creative' | 'World';
 
@@ -70,6 +71,17 @@ export const GAMES: GameMeta[] = [
     component: HandymanMode,
     color: 'bg-slate-800',
     textColor: 'text-blue-300',
+    featured: true
+  },
+  {
+    id: 'style-studio',
+    title: 'Style Studio',
+    description: 'Design outfits & runway show!',
+    icon: <Scissors className="w-6 h-6" />,
+    category: 'Creative',
+    component: StyleStudioMode,
+    color: 'bg-fuchsia-600',
+    textColor: 'text-white',
     featured: true
   },
   {
