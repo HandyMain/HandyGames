@@ -1,0 +1,8 @@
+{
+  "description": "A fun and interactive flashcard game for kids to learn letters and numbers.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "name": "App"
+}
