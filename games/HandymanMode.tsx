@@ -23,7 +23,7 @@ export const HandymanMode = ({ onUnlock }: { onUnlock?: (id: string) => void }) 
         : JOBS.filter(j => j.categoryId === selectedCategory);
 
     return (
-        <div className="w-full min-h-screen flex flex-col items-center bg-slate-50 pt-20 pb-24 overflow-y-auto">
+        <div className="w-full h-full flex flex-col items-center bg-slate-50 pt-20 pb-24 overflow-y-auto no-scrollbar touch-pan-y">
             
             {/* Header */}
             <div className="w-full max-w-xl bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl mb-8 flex flex-col items-center text-center relative overflow-hidden mx-4 shrink-0">
@@ -75,7 +75,7 @@ export const HandymanMode = ({ onUnlock }: { onUnlock?: (id: string) => void }) 
                         <button
                             key={job.id}
                             onClick={() => handleJobSelect(job)}
-                            className="bg-white p-5 rounded-[2rem] shadow-lg border-2 border-slate-100 hover:border-blue-300 hover:shadow-xl transition-all active:scale-98 flex items-center gap-5 text-left group"
+                            className="bg-white p-5 rounded-[2rem] shadow-lg border-2 border-slate-100 hover:border-blue-300 hover:shadow-xl transition-all active:scale-98 flex items-center gap-5 text-left group shrink-0"
                         >
                             <div className={`w-20 h-20 rounded-2xl flex items-center justify-center bg-slate-50 text-3xl group-hover:scale-110 transition-transform ${catColor} shadow-inner`}>
                                 <CategoryIcon size={32} />
