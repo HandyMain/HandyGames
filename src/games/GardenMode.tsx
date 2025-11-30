@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Coins, Warehouse, Truck, ChevronDown, ChevronUp, Shovel, Droplets } from 'lucide-react';
 import { speak } from '../utils';
 import { 
@@ -198,7 +199,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                 newBarn[idx] = { ...slot, isHungry: false };
                 spawnParticle("❤️", rect.left + rect.width/2, rect.top);
             } else {
-                speak(`Need ${food}`);
+                speak(`Need ${ITEMS[food].name}`);
             }
             setBarn(newBarn);
         }
@@ -216,7 +217,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
     };
 
     const handleUpgrade = (type: keyof Upgrades) => {
-        const costs: any = { sprinkler: 500, autofeeder: 800, scarecrow: 300, plotCount: 1000, barnCapacity: 1000 };
+        const costs: any = { sprinkler: 500, autofeeder: 800, scarecrow: 300, combine: 2000, plotCount: 1000, barnCapacity: 1000 };
         const cost = costs[type];
         
         if (type === 'plotCount' && upgrades.plotCount >= 32) return;
@@ -306,9 +307,10 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
             {/* 3D WORLD */}
             <FarmView 
                 plots={plots} 
-                activeView={activeView} 
+                barn={barn}
                 onPlotClick={handlePlotClick}
-                onViewChange={setActiveView}
+                onBarnClick={handleBarnClick}
+                onOpenMarket={() => setActiveView('market')}
             />
 
             {/* PARTICLES */}

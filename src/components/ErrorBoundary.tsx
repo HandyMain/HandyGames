@@ -1,4 +1,4 @@
-import React, { Component, type ReactNode, type ErrorInfo } from 'react';
+import React, { type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -9,7 +9,7 @@ interface ErrorBoundaryState {
     hasError: boolean;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false
   };

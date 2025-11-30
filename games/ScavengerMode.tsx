@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, Check, RotateCcw, Sparkles, X, SkipForward, Timer, Lightbulb, Zap, Trophy, ArrowRight } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
@@ -65,16 +64,29 @@ export const ScavengerMode = ({ difficulty = 'easy', onUnlock }: { difficulty: '
   // --- Camera Logic ---
   const startCamera = async () => {
     try {
+      // Try environment first (back camera)
       const ms = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
       setStream(ms);
       if (videoRef.current) {
         videoRef.current.srcObject = ms;
+        videoRef.current.play().catch(e => console.error("Video play failed", e));
       }
     } catch (e) {
-      console.error("Camera error:", e);
-      setFeedback("I can't see! Please allow camera access.");
+      console.log("Environment camera failed, trying fallback...", e);
+      try {
+          // Fallback to any available camera
+          const ms = await navigator.mediaDevices.getUserMedia({ video: true });
+          setStream(ms);
+          if (videoRef.current) {
+            videoRef.current.srcObject = ms;
+            videoRef.current.play().catch(e => console.error("Video play failed", e));
+          }
+      } catch (err) {
+          console.error("Camera error:", err);
+          setFeedback("I can't see! Please allow camera access in your browser settings.");
+      }
     }
   };
 
@@ -93,7 +105,7 @@ export const ScavengerMode = ({ difficulty = 'easy', onUnlock }: { difficulty: '
           const newStatus = !torchOn;
           track.applyConstraints({
               advanced: [{ torch: newStatus }] as any
-          });
+          }).catch(e => console.log("Torch error", e));
           setTorchOn(newStatus);
       } else {
           speak("Sorry, I can't turn on the light.");
