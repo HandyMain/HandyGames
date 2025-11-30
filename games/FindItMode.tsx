@@ -1,7 +1,8 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Star, Flame, Timer, Volume2 } from 'lucide-react';
-import { getRandomItem, shuffleArray, speak } from '../utils';
+import { getRandomItem, shuffleArray, speak, playSound } from '../utils';
 import { Confetti } from '../components';
 
 export const FindItMode = ({ pool }: { pool: string[] }) => {
@@ -42,6 +43,7 @@ export const FindItMode = ({ pool }: { pool: string[] }) => {
     if (timeLeft === 0 && status === 'playing') {
         setStatus('timeout');
         setStreak(0); // Reset streak on timeout
+        playSound('error');
         speak(`Time's up! The answer was ${target}`);
         setTimeout(setupRound, 3000);
     }
@@ -89,6 +91,7 @@ export const FindItMode = ({ pool }: { pool: string[] }) => {
       setStatus('correct');
       setScore(s => s + 1);
       setStreak(s => s + 1);
+      playSound('success');
       speak("Great job!");
       setTimeout(setupRound, 2000);
     } else {
@@ -96,6 +99,7 @@ export const FindItMode = ({ pool }: { pool: string[] }) => {
       setStatus('wrong');
       setWrongIndex(index);
       setStreak(0); // Reset streak
+      playSound('error');
       
       speak(`No, that is not it. That is the ${describeItem(item)}. You are looking for the ${describeItem(target)}.`);
       

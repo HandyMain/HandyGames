@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import { speak } from '../utils';
 import { Confetti } from '../components';
 
-export const DrawingMode = () => {
+export const DrawingMode = ({ onUnlock }: { onUnlock?: (id: string) => void }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
@@ -135,6 +135,7 @@ export const DrawingMode = () => {
       setGuess(text);
       setStatus('success');
       speak(`Is it... ${text}?`);
+      if (onUnlock) onUnlock('artist');
 
     } catch (error) {
       console.error(error);

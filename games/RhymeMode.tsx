@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, Zap, Trophy, Timer, Play, RotateCcw, Music, MicOff } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, Zap, Trophy, Play, RotateCcw, Music, MicOff } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
-import { speak, getRandomItem, SpeechRecognition } from '../utils';
+import { speak, getRandomItem } from '../utils';
 import { Confetti } from '../components';
+import { useSpeechRecognition } from '../hooks';
 
 const WORDS_EASY = ["Cat", "Dog", "Pen", "Box", "Sun", "Hat", "Pig", "Bed", "Car", "Tree"];
 const WORDS_MEDIUM = ["Star", "Moon", "Cake", "Fish", "Ball", "House", "Book", "Chair", "Spoon"];
@@ -17,40 +18,36 @@ export const RhymeMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'mediu
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(5);
   const [feedback, setFeedback] = useState('');
-  const [isListening, setIsListening] = useState(false);
   
   const timerRef = useRef<number | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Hook setup
+  const { isListening, start, stop, abort } = useSpeechRecognition({
+      interimResults: false,
+      onResult: (transcript) => {
+          if (transcript.trim()) {
+            stopTimer();
+            stop();
+            verifyRhyme(currentWord, transcript);
+          }
+      },
+      onError: () => {
+          // Silent fail or retry?
+      }
+  });
 
   useEffect(() => {
-    // Init speech recognition
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = 'en-US';
-      recognitionRef.current = rec;
-    }
     return () => {
         stopTimer();
-        stopListening();
+        abort();
     };
-  }, []);
+  }, [abort]);
 
   const stopTimer = () => {
     if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
     }
-  };
-
-  const stopListening = () => {
-      const rec = recognitionRef.current;
-      if (rec) {
-          try { rec.abort(); } catch(e) {}
-      }
-      setIsListening(false);
   };
 
   const startGame = () => {
@@ -60,9 +57,8 @@ export const RhymeMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'mediu
   };
 
   const nextRound = (currentStreak: number) => {
-    // Stop any previous listening or timers
     stopTimer();
-    stopListening();
+    stop(); // Ensure clean state
     
     // Pick word based on difficulty and streak
     let pool = WORDS_EASY;
@@ -84,12 +80,11 @@ export const RhymeMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'mediu
     speak(`What rhymes with ${word}?`);
 
     // Start Timer
-    const totalTime = time;
     timerRef.current = window.setInterval(() => {
         setTimeLeft(prev => {
             if (prev <= 1) {
                 stopTimer();
-                stopListening(); // Cut off mic immediately on timeout
+                stop();
                 handleTimeout(word);
                 return 0;
             }
@@ -101,50 +96,17 @@ export const RhymeMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'mediu
     setTimeout(() => {
          // Only start if still in playing state
          setGameState(prev => {
-             if (prev === 'playing') startListening();
+             if (prev === 'playing') start();
              return prev;
          });
     }, 1000);
   };
 
-  const startListening = () => {
-    const rec = recognitionRef.current;
-    if (!rec) return;
-
-    try {
-        rec.abort(); // Ensure clean slate
-    } catch(e) {}
-
-    rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
-
-    rec.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.trim();
-        if (transcript) {
-            stopTimer();
-            setIsListening(false);
-            verifyRhyme(currentWord, transcript);
-        }
-    };
-
-    rec.onerror = (e) => {
-        console.log("Speech error", e);
-        setIsListening(false);
-    };
-
-    try {
-        rec.start();
-    } catch(e) {
-        console.error("Start failed", e);
-        setIsListening(false);
-    }
-  };
-
   const handleManualMicClick = () => {
       if (isListening) {
-          stopListening();
+          stop();
       } else {
-          startListening();
+          start();
       }
   };
 

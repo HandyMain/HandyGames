@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, Check, RotateCcw, Sparkles, X, SkipForward, Timer, Lightbulb, Zap, Trophy, ArrowRight } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
@@ -26,7 +27,7 @@ const MISSIONS_HARD = [
   "Something older than you", "Something written in ink", "Something that smells good"
 ];
 
-export const ScavengerMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medium' | 'hard' }) => {
+export const ScavengerMode = ({ difficulty = 'easy', onUnlock }: { difficulty: 'easy' | 'medium' | 'hard', onUnlock?: (id: string) => void }) => {
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -112,7 +113,7 @@ export const ScavengerMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'm
 
     const pool = getPool();
     // Filter out items we've already found
-    const available = pool.filter(m => !foundItems.has(m) || reset); // If reset is true, we ignore history? No, reset clears history in useEffect.
+    const available = pool.filter(m => !foundItems.has(m) || reset); 
 
     // Check for Level Completion
     if (available.length === 0 && !reset) {
@@ -188,10 +189,14 @@ export const ScavengerMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'm
     // Capture frame
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    // Optimize image size
+    const MAX_WIDTH = 800;
+    const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
     
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
@@ -236,6 +241,7 @@ export const ScavengerMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'm
             
             setScore(s => s + points);
             setFoundItems(prev => new Set(prev).add(mission)); // Mark as found
+            if (onUnlock) onUnlock('scavenger');
         } else {
             setStatus('fail');
             speak(text);

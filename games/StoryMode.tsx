@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PenTool, Mic, MicOff, BookOpen, Sparkles, Volume2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-import { speak, SpeechRecognition } from '../utils';
+import { speak } from '../utils';
+import { useSpeechRecognition } from '../hooks';
 
 interface Message {
     role: 'ai' | 'user';
@@ -12,26 +13,47 @@ interface Message {
 export const StoryMode = () => {
     const [history, setHistory] = useState<Message[]>([]);
     const [status, setStatus] = useState<'idle' | 'listening' | 'generating'>('idle');
-    const [transcript, setTranscript] = useState('');
     
-    // Use refs to track state inside event listeners to avoid stale closures
-    const transcriptRef = useRef('');
-    const recognitionRef = useRef<SpeechRecognition | null>(null);
+    // We use the transcript from the hook, which updates live
+    const { isListening, transcript, start, stop, setTranscript } = useSpeechRecognition({
+        interimResults: true,
+        onStart: () => setStatus('listening'),
+        onEnd: () => {
+            // Hook handles transcript state update, we check status in effect
+        }
+    });
 
     useEffect(() => {
-        // Init Speech
-        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const rec = new SpeechRecognition();
-            rec.continuous = false;
-            rec.interimResults = true;
-            rec.lang = 'en-US';
-            recognitionRef.current = rec;
-        }
-
         // Initial Prompt
         startStory();
     }, []);
+
+    // Effect to handle end of speech when `isListening` toggles to false
+    useEffect(() => {
+        if (status === 'listening' && !isListening) {
+             if (transcript.trim().length > 1) {
+                // User finished speaking
+                setStatus('generating');
+                
+                // Use functional state update to ensure we have latest history
+                setHistory(prevHistory => {
+                    const newHistory = [...prevHistory, { role: 'user', text: transcript } as Message];
+                    
+                    // Trigger AI response
+                    generateAIResponse(transcript, newHistory).then(aiResponse => {
+                        setHistory(h => [...h, { role: 'ai', text: aiResponse }]);
+                        speak(aiResponse);
+                        setStatus('idle');
+                        setTranscript(''); // Clear for next turn
+                    });
+
+                    return newHistory;
+                });
+            } else {
+                setStatus('idle');
+            }
+        }
+    }, [isListening, status, transcript, setTranscript]);
 
     const startStory = async () => {
         setStatus('generating');
@@ -63,57 +85,13 @@ Storyteller: (Continue the story in 1-2 fun, simple sentences. Accept the child'
     };
 
     const handleMicClick = () => {
-        const rec = recognitionRef.current;
-        if (!rec) return;
-
         if (status === 'listening') {
-            rec.stop();
+            stop();
             return;
         }
-
         setTranscript('');
-        transcriptRef.current = '';
-        setStatus('listening');
         window.speechSynthesis.cancel();
-
-        rec.onresult = (e) => {
-            const t = e.results[0][0].transcript;
-            setTranscript(t);
-            transcriptRef.current = t; // Update ref
-        };
-
-        rec.onend = async () => {
-            const finalTranscript = transcriptRef.current;
-            
-            if (finalTranscript.trim().length > 1) {
-                // User finished speaking
-                setStatus('generating');
-                
-                // Use functional state update to ensure we have latest history
-                setHistory(prevHistory => {
-                    const newHistory = [...prevHistory, { role: 'user', text: finalTranscript } as Message];
-                    
-                    // Trigger AI response
-                    generateAIResponse(finalTranscript, newHistory).then(aiResponse => {
-                        setHistory(h => [...h, { role: 'ai', text: aiResponse }]);
-                        speak(aiResponse);
-                        setStatus('idle');
-                        setTranscript('');
-                        transcriptRef.current = '';
-                    });
-
-                    return newHistory;
-                });
-            } else {
-                setStatus('idle');
-            }
-        };
-
-        try {
-            rec.start();
-        } catch (e) {
-            setStatus('idle');
-        }
+        start();
     };
 
     return (

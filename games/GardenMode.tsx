@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sprout, Droplets, Shovel, ShoppingBag, Coins, 
@@ -335,7 +334,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
     };
 
     return (
-        <div className="w-full max-w-2xl flex flex-col items-center h-[80vh] relative">
+        <div className="w-full flex flex-col items-center h-[calc(100vh-100px)] relative overflow-hidden">
             
             {/* Floaters Layer */}
             {floaters.map(f => (
@@ -349,7 +348,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
             ))}
 
             {/* --- TOP HUD --- */}
-            <div className="w-full bg-white rounded-3xl shadow-sm border border-green-100 p-2 md:p-4 mb-2 flex justify-between items-center relative z-20">
+            <div className="w-full max-w-xl bg-white rounded-3xl shadow-sm border border-green-100 p-2 mb-2 flex justify-between items-center relative z-20 shrink-0">
                 <div className={`flex items-center gap-2 px-3 py-1 md:px-4 md:py-2 rounded-full border ${coins < 5 ? 'bg-red-100 border-red-200 animate-pulse' : 'bg-yellow-100 border-yellow-200'}`}>
                     <Coins className={coins < 5 ? 'text-red-500 w-4 h-4' : 'text-yellow-600 w-5 h-5'} />
                     <span className={`text-lg md:text-xl font-black ${coins < 5 ? 'text-red-700' : 'text-yellow-700'}`}>{coins}</span>
@@ -365,10 +364,10 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                     </button>
                 )}
 
-                <div className="flex gap-1 md:gap-2">
-                    <button onClick={() => setActiveTab('farm')} className={`p-2 md:p-3 rounded-xl transition-all ${activeTab === 'farm' ? 'bg-green-500 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}><Tractor size={20} /></button>
-                    <button onClick={() => setActiveTab('barn')} className={`p-2 md:p-3 rounded-xl transition-all ${activeTab === 'barn' ? 'bg-orange-500 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}><Home size={20} /></button>
-                    <button onClick={() => setActiveTab('silo')} className={`p-2 md:p-3 rounded-xl transition-all relative ${activeTab === 'silo' ? 'bg-blue-500 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}>
+                <div className="flex gap-1">
+                    <button onClick={() => setActiveTab('farm')} className={`p-2 rounded-xl transition-all ${activeTab === 'farm' ? 'bg-green-500 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}><Tractor size={20} /></button>
+                    <button onClick={() => setActiveTab('barn')} className={`p-2 rounded-xl transition-all ${activeTab === 'barn' ? 'bg-orange-500 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}><Home size={20} /></button>
+                    <button onClick={() => setActiveTab('silo')} className={`p-2 rounded-xl transition-all relative ${activeTab === 'silo' ? 'bg-blue-500 text-white shadow-lg' : 'bg-gray-100 text-gray-400'}`}>
                         <Warehouse size={20} />
                         {inventoryTotalValue > 0 && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>}
                     </button>
@@ -376,18 +375,18 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
             </div>
 
             {/* --- MAIN VIEWS --- */}
-            <div className="flex-1 w-full bg-green-50/50 rounded-3xl border-4 border-green-100 overflow-hidden relative">
+            <div className="flex-1 w-full max-w-xl bg-green-50/50 rounded-3xl border-4 border-green-100 overflow-hidden relative">
                 
                 {/* VIEW: FARM */}
                 {activeTab === 'farm' && (
-                    <div className="w-full h-full p-4 flex flex-col items-center justify-center">
-                        <div className="grid grid-cols-3 gap-3 w-full max-w-[350px] aspect-square">
+                    <div className="w-full h-full p-2 flex flex-col items-center justify-center pb-24 overflow-y-auto no-scrollbar">
+                        <div className="grid grid-cols-3 gap-2 w-full aspect-square">
                             {grid.map((plot, i) => (
                                 <button
                                     key={i}
                                     onClick={(e) => handleFarmClick(i, e)}
                                     className={`
-                                        relative rounded-2xl border-b-4 active:border-b-0 active:translate-y-1 transition-all overflow-hidden
+                                        relative rounded-xl border-b-4 active:border-b-0 active:translate-y-1 transition-all overflow-hidden w-full h-full
                                         ${plot.state === 'grass' ? 'bg-green-400 border-green-600' : 
                                           plot.isWet ? 'bg-[#5D4037] border-[#3E2723]' : 'bg-[#eecfa1] border-[#d2b48c]'} 
                                     `}
@@ -395,14 +394,14 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                                     {plot.state === 'grass' && <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/grass.png')]"></div>}
                                     
                                     {/* Crop */}
-                                    <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         {renderCrop(plot)}
                                     </div>
 
                                     {/* Status Icons */}
                                     {plot.crop && plot.stage < 3 && !plot.isWet && (
                                         <div className="absolute top-1 right-1 bg-white/90 p-1 rounded-full animate-bounce shadow-md z-10">
-                                            <Droplets size={16} className="text-blue-500 fill-blue-500" />
+                                            <Droplets size={12} className="text-blue-500 fill-blue-500" />
                                         </div>
                                     )}
                                     {plot.crop && plot.stage < 3 && plot.isWet && (
@@ -418,19 +417,19 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
 
                 {/* VIEW: BARN */}
                 {activeTab === 'barn' && (
-                    <div className="w-full h-full p-4 flex flex-col items-center justify-center bg-orange-50">
-                        <div className="grid grid-cols-1 gap-3 w-full max-w-sm overflow-y-auto">
+                    <div className="w-full h-full p-4 flex flex-col items-center bg-orange-50 overflow-y-auto no-scrollbar pb-24">
+                        <div className="grid grid-cols-1 gap-3 w-full">
                             {barn.map((slot, i) => (
                                 <button 
                                     key={i}
                                     onClick={() => handleBarnClick(i)}
-                                    className="h-20 md:h-24 bg-white rounded-2xl shadow-sm border-b-4 border-orange-200 active:border-b-0 active:translate-y-1 flex items-center p-4 relative"
+                                    className="h-24 bg-white rounded-2xl shadow-sm border-b-4 border-orange-200 active:border-b-0 active:translate-y-1 flex items-center p-4 relative"
                                 >
                                     {slot.animal ? (
                                         <>
-                                            <div className="text-4xl md:text-5xl mr-4">{ANIMALS[slot.animal].emoji}</div>
+                                            <div className="text-5xl mr-4">{ANIMALS[slot.animal].emoji}</div>
                                             <div className="flex-1 text-left">
-                                                <div className="font-bold text-slate-700 text-sm md:text-base">{ANIMALS[slot.animal].name}</div>
+                                                <div className="font-bold text-slate-700 text-base">{ANIMALS[slot.animal].name}</div>
                                                 
                                                 {!slot.productReady && !slot.isHungry && (
                                                     <div className="w-full h-2 bg-gray-100 rounded-full mt-2 overflow-hidden">
@@ -464,8 +463,8 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
 
                 {/* VIEW: SILO (MARKET) */}
                 {activeTab === 'silo' && (
-                    <div className="w-full h-full p-6 overflow-y-auto">
-                        <h2 className="text-xl md:text-2xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="w-full h-full p-4 overflow-y-auto no-scrollbar pb-24">
+                        <h2 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
                             <Store /> Market
                         </h2>
                         
@@ -483,11 +482,11 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                                     const price = difficulty === 'easy' ? item.sell : Math.floor(item.sell * 0.8);
 
                                     return (
-                                        <div key={key} className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                                        <div key={key} className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-2xl md:text-3xl">{item.emoji}</span>
+                                                <span className="text-3xl">{item.emoji}</span>
                                                 <div>
-                                                    <div className="font-bold text-slate-700 text-sm md:text-base">{item.name}</div>
+                                                    <div className="font-bold text-slate-700 text-sm">{item.name}</div>
                                                     <div className="text-xs text-slate-400">x{count}</div>
                                                 </div>
                                             </div>
@@ -498,7 +497,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                                                     speak("Sold!");
                                                     spawnFloater(`+${price * count}💰`, window.innerWidth/2, window.innerHeight/2);
                                                 }}
-                                                className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-xs md:text-sm shadow-md hover:scale-105 transition-transform"
+                                                className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-transform"
                                             >
                                                 Sell (+{price * count})
                                             </button>
@@ -508,7 +507,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                             </div>
                         )}
                         
-                        <div className="mt-8 border-t pt-6">
+                        <div className="mt-8 border-t pt-6 mb-8">
                             <h3 className="font-bold text-slate-400 uppercase tracking-widest text-xs mb-4">Farm Upgrades</h3>
                             <button 
                                 onClick={buySprinkler}
@@ -528,21 +527,21 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                     </div>
                 )}
 
-                {/* --- BOTTOM TOOLBAR --- */}
-                <div className="absolute bottom-0 w-full bg-white border-t border-gray-100 p-2 md:p-4 z-20">
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {/* --- BOTTOM TOOLBAR (Absolute) --- */}
+                <div className="absolute bottom-0 w-full bg-white border-t border-gray-100 p-2 z-20 shadow-lg">
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                         {/* Basic Tools */}
                         {['hoe', 'water'].map(t => (
                             <button
                                 key={t}
                                 onClick={() => setSelectedTool(t)}
                                 className={`
-                                    flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-xl flex flex-col items-center justify-center border-2 transition-all
+                                    flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center border-2 transition-all
                                     ${selectedTool === t ? 'bg-slate-800 border-slate-900 text-white scale-105' : 'bg-white border-slate-200 text-slate-400'}
                                 `}
                             >
-                                {t === 'hoe' ? <Shovel size={20} className="md:w-6 md:h-6" /> : <Droplets size={20} className="md:w-6 md:h-6" />}
-                                <span className="text-[8px] md:text-[10px] font-bold uppercase mt-1">{t}</span>
+                                {t === 'hoe' ? <Shovel size={20} /> : <Droplets size={20} />}
+                                <span className="text-[9px] font-bold uppercase mt-1">{t}</span>
                             </button>
                         ))}
 
@@ -554,12 +553,12 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                                 key={item.id}
                                 onClick={() => setSelectedTool(item.id)}
                                 className={`
-                                    flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-xl flex flex-col items-center justify-center border-2 transition-all relative
+                                    flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center border-2 transition-all relative
                                     ${selectedTool === item.id ? 'bg-green-100 border-green-500 scale-105' : 'bg-white border-gray-200 grayscale opacity-80'}
                                 `}
                             >
-                                <span className="text-xl md:text-2xl">{item.emoji}</span>
-                                <span className="absolute bottom-0.5 right-0.5 md:bottom-1 md:right-1 bg-white/80 px-1 rounded text-[8px] md:text-[10px] font-bold text-green-700">
+                                <span className="text-2xl">{item.emoji}</span>
+                                <span className="absolute bottom-0.5 right-0.5 bg-white/80 px-1 rounded text-[9px] font-bold text-green-700">
                                     {item.cost}
                                 </span>
                             </button>
@@ -573,12 +572,12 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
                                 key={anim.id}
                                 onClick={() => setSelectedTool(anim.id)}
                                 className={`
-                                    flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-xl flex flex-col items-center justify-center border-2 transition-all relative
+                                    flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center border-2 transition-all relative
                                     ${selectedTool === anim.id ? 'bg-orange-100 border-orange-500 scale-105' : 'bg-white border-gray-200 grayscale opacity-80'}
                                 `}
                             >
-                                <span className="text-xl md:text-2xl">{anim.emoji}</span>
-                                <span className="absolute bottom-0.5 right-0.5 md:bottom-1 md:right-1 bg-white/80 px-1 rounded text-[8px] md:text-[10px] font-bold text-orange-700">
+                                <span className="text-2xl">{anim.emoji}</span>
+                                <span className="absolute bottom-0.5 right-0.5 bg-white/80 px-1 rounded text-[9px] font-bold text-orange-700">
                                     {anim.cost}
                                 </span>
                             </button>

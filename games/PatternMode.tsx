@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRandomItem, shuffleArray, speak } from '../utils';
+import { getRandomItem, shuffleArray, speak, playSound } from '../utils';
 import { Confetti } from '../components';
 
 export const PatternMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medium' | 'hard' }) => {
@@ -69,9 +70,11 @@ export const PatternMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'med
     const handleOptionClick = (item: string) => {
         if (item === answer) {
             setStatus('correct');
+            playSound('success');
             speak("Good job! The train is leaving!");
             setTimeout(setupRound, 3000);
         } else {
+            playSound('error');
             speak("Not quite. Try again!");
         }
     }

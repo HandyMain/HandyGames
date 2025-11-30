@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Circle, Square, Triangle, Hexagon, Star, HelpCircle, ArrowRight } from 'lucide-react';
-import { speak, shuffleArray, getRandomItem } from '../utils';
+import { speak, shuffleArray, getRandomItem, playSound } from '../utils';
 import { Confetti } from '../components';
 
 type ShapeType = 'circle' | 'square' | 'triangle' | 'star';
@@ -122,10 +123,12 @@ export const LogicMode = () => {
       if (correctIds.includes(id)) {
           setStatus('correct');
           setScore(s => s + 1);
+          playSound('success');
           speak("Correct!");
           setTimeout(setupRound, 1500);
       } else {
           setStatus('wrong');
+          playSound('error');
           speak("Oops! That one doesn't follow the rule.");
           setTimeout(() => {
               setStatus('playing');

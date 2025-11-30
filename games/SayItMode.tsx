@@ -1,18 +1,18 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Volume2, VolumeX, Mic, MicOff, ArrowRight } from 'lucide-react';
-import { getRandomItem, speak, SpeechRecognition } from '../utils';
+import { getRandomItem, speak, playSound } from '../utils';
 import { Confetti, HintDisplay } from '../components';
 import { LETTER_OBJECTS } from '../data';
+import { useSpeechRecognition } from '../hooks';
 
 export const SayItMode = ({ pool }: { pool: string[] }) => {
   const [current, setCurrent] = useState(getRandomItem(pool));
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [feedback, setFeedback] = useState<'none' | 'listening' | 'correct' | 'wrong'>('none');
   const [volume, setVolume] = useState(0); // For visualizer
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
   // Audio Context for Visualizer
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -24,22 +24,7 @@ export const SayItMode = ({ pool }: { pool: string[] }) => {
   const isMutedRef = useRef(isMuted);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
-  useEffect(() => {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = 'en-US';
-      setRecognition(rec);
-    }
-    
-    return () => {
-      window.speechSynthesis.cancel();
-      stopVisualizer();
-    };
-  }, []);
-
+  // Visualizer Functions
   const startVisualizer = async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -80,6 +65,13 @@ export const SayItMode = ({ pool }: { pool: string[] }) => {
       setVolume(0);
   };
 
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      stopVisualizer();
+    };
+  }, []);
+
   const getSpokenText = (item: string) => {
       const isNumber = !isNaN(Number(item));
       if (isNumber) return `The number is ${item}`;
@@ -95,13 +87,10 @@ export const SayItMode = ({ pool }: { pool: string[] }) => {
   const nextCard = useCallback(() => {
     setIsAnimating(true);
     setFeedback('none');
-    setIsListening(false);
     stopVisualizer();
     
-    if(recognition) {
-        try { recognition.stop(); } catch(e) {}
-    }
-
+    // We don't need to manually stop recognition here, handled by effect or usage
+    
     setTimeout(() => {
       let next = getRandomItem(pool);
       if (pool.length > 1) {
@@ -115,22 +104,10 @@ export const SayItMode = ({ pool }: { pool: string[] }) => {
       setIsAnimating(false);
       if (!isMutedRef.current) speak(getSpokenText(next)); 
     }, 200);
-  }, [pool, current, recognition]);
+  }, [pool, current]);
 
-  const startListening = useCallback(() => {
-    if (!recognition) return;
-    window.speechSynthesis.cancel();
-    try { recognition.stop(); } catch(e){}
-
-    startVisualizer();
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      setFeedback('listening');
-    };
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.toLowerCase().trim();
+  const handleResult = (transcriptRaw: string) => {
+      const transcript = transcriptRaw.toLowerCase().trim();
       const target = current.toLowerCase();
 
       const numberMap: {[key:string]: string} = {
@@ -145,62 +122,58 @@ export const SayItMode = ({ pool }: { pool: string[] }) => {
       
       if (transcript === target || transcript === targetWord || transcript.includes(targetWord)) {
         setFeedback('correct');
+        playSound('success');
         speak("Correct! " + getSpokenText(current));
         stopVisualizer();
+        stop(); // Stop listening
         setTimeout(() => {
           nextCard();
         }, 3000);
       } else {
         setFeedback('wrong');
+        playSound('error');
         const failMessage = "Not quite. That was " + transcript + ". Try again!";
         speak(failMessage, () => {
              setTimeout(() => {
                  setFeedback('none'); 
-                 // Don't auto-restart listening to avoid loops, user can click again
                  stopVisualizer();
-                 setIsListening(false);
+                 stop(); // Stop listening
              }, 300);
         });
       }
-    };
+  };
 
-    recognition.onerror = (event) => {
-      setIsListening(false);
-      setFeedback('none');
-      stopVisualizer();
-    };
-
-    recognition.onend = () => {
-       if (feedback === 'listening') {
-           setIsListening(false);
-           setFeedback('none');
-           stopVisualizer();
-       }
-    };
-
-    try {
-      recognition.start();
-    } catch (err) {
-      setIsListening(false);
-      stopVisualizer();
-    }
-  }, [recognition, current, nextCard, feedback]);
+  const { isListening, start, stop, isSupported } = useSpeechRecognition({
+      interimResults: false,
+      onStart: () => {
+          setFeedback('listening');
+          startVisualizer();
+      },
+      onEnd: () => {
+          if (feedback === 'listening') {
+               setFeedback('none');
+               stopVisualizer();
+          }
+      },
+      onError: () => {
+          setFeedback('none');
+          stopVisualizer();
+      },
+      onResult: handleResult
+  });
 
   const handleMicClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!recognition) {
+    if (!isSupported) {
       alert("Speech recognition is not supported in this browser. Try Chrome!");
       return;
     }
     
     if (isListening) {
-      recognition.stop();
-      setIsListening(false);
-      setFeedback('none');
-      stopVisualizer();
+      stop();
     } else {
       window.speechSynthesis.cancel();
-      startListening();
+      start();
     }
   };
 

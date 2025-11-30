@@ -45,66 +45,66 @@ export const BibleMode = () => {
     }
 
     return (
-        <div className="w-full max-w-2xl flex flex-col items-center">
+        <div className="w-full max-w-xl flex flex-col items-center min-h-screen pb-20">
             {status === 'correct' && <Confetti />}
             
-            <div className="bg-yellow-100 p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] shadow-xl w-full text-center border-4 md:border-8 border-yellow-200 mb-6 md:mb-8 relative transition-all duration-500">
+            <div className="bg-yellow-100 p-4 rounded-3xl shadow-xl w-full text-center border-4 border-yellow-200 mb-4 relative transition-all duration-500">
                  {status !== 'correct' ? (
-                     <>
-                        <h2 className="text-xl md:text-2xl font-bold text-yellow-900 leading-tight mb-2">
+                     <div className="py-4">
+                        <h2 className="text-xl font-bold text-yellow-900 leading-tight mb-3">
                             {current.q}
                         </h2>
                         <button 
                             onClick={() => speak(current.q)}
-                            className="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 p-2 md:p-3 rounded-full transition-colors shadow-sm inline-flex mb-2"
+                            className="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 p-3 rounded-full transition-colors shadow-sm inline-flex mb-2"
                         >
                             <Volume2 size={24} />
                         </button>
-                     </>
+                     </div>
                  ) : (
-                     <div className="animate-in fade-in slide-in-from-bottom-2">
-                         <div className="text-xs md:text-sm font-bold text-yellow-600 uppercase tracking-widest mb-1">{current.ref}</div>
-                         <h2 className="text-xl md:text-2xl font-bold text-green-700 leading-tight mb-4">
+                     <div className="animate-in fade-in slide-in-from-bottom-2 py-2">
+                         <div className="text-xs font-bold text-yellow-600 uppercase tracking-widest mb-1">{current.ref}</div>
+                         <h2 className="text-lg font-bold text-green-700 leading-tight mb-4">
                             {current.fact}
                          </h2>
-                         <div className="flex flex-wrap gap-2 md:gap-3 justify-center">
+                         <div className="flex flex-wrap gap-2 justify-center">
                             <button
                                 onClick={() => speak(current.story)}
-                                className="bg-blue-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-2 text-sm md:text-base"
+                                className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-2 text-sm"
                             >
-                                <BookOpen size={18} />
+                                <BookOpen size={16} />
                                 Story Time
                             </button>
                             <button
                                 onClick={setupRound}
-                                className="bg-green-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold shadow-lg hover:bg-green-600 active:scale-95 transition-all flex items-center gap-2 text-sm md:text-base"
+                                className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-green-600 active:scale-95 transition-all flex items-center gap-2 text-sm"
                             >
-                                Next <ArrowRight size={18} />
+                                Next <ArrowRight size={16} />
                             </button>
                          </div>
                      </div>
                  )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full">
+            <div className="grid grid-cols-2 gap-3 w-full">
                 {options.map((item) => (
                     <button
                         key={item.id}
                         onClick={() => handleOptionClick(item)}
-                        className={`aspect-square sm:aspect-auto sm:h-48 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-lg border-b-8 active:border-b-0 active:translate-y-2 transition-all p-4
+                        className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm border-b-4 active:border-b-0 active:translate-y-1 transition-all p-2
                              ${status === 'correct' && item.id === current.id 
-                                ? 'bg-green-500 border-green-700 text-white scale-105 ring-4 ring-green-300' 
+                                ? 'bg-green-500 border-green-700 text-white scale-105 ring-4 ring-green-300 z-10' 
                                 : 'bg-white border-yellow-200 hover:bg-yellow-50'
                              }
                              ${status === 'wrong' && item.id !== current.id
                                 ? 'opacity-30'
                                 : ''
                              }
-                             ${status === 'correct' && item.id !== current.id ? 'opacity-0 pointer-events-none' : ''}
+                             ${status === 'correct' && item.id !== current.id ? 'opacity-50' : ''}
                         `}
                     >
-                        <span className="text-6xl md:text-8xl filter drop-shadow-sm transition-transform duration-300 transform hover:scale-110">{item.e}</span>
-                        <span className={`font-black text-sm md:text-lg uppercase tracking-wide px-2 py-1 rounded-lg ${status === 'correct' && item.id === current.id ? 'bg-green-600 text-white' : 'bg-yellow-100 text-yellow-800'}`}>
+                        <span className="text-5xl filter drop-shadow-sm transition-transform duration-300 transform">{item.e}</span>
+                        <span className={`font-black text-xs uppercase tracking-wide px-2 py-1 rounded-lg ${status === 'correct' && item.id === current.id ? 'bg-green-600 text-white' : 'bg-yellow-50 text-yellow-800'}`}>
                             {item.name}
                         </span>
                     </button>

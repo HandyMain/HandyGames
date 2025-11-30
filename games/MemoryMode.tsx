@@ -1,7 +1,8 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { User, Users, RotateCcw, Star } from 'lucide-react';
-import { shuffleArray, speak } from '../utils';
+import { shuffleArray, speak, playSound } from '../utils';
 import { Confetti } from '../components';
 
 interface Card {
@@ -71,6 +72,7 @@ export const MemoryMode = ({ pool, difficulty = 'easy' }: { pool: string[], diff
   const handleCardClick = (index: number) => {
     if (isLocked || cards[index].isFlipped || cards[index].isMatched) return;
 
+    playSound('click');
     speak(cards[index].content);
 
     const newCards = [...cards];
@@ -105,6 +107,7 @@ export const MemoryMode = ({ pool, difficulty = 'easy' }: { pool: string[], diff
         // Update Score for current player
         setScores(prev => ({ ...prev, [currentPlayer]: prev[currentPlayer] + 1 }));
         
+        playSound('success');
         speak("Match!");
         
         if (matches + 1 === currentCards.length / 2) {

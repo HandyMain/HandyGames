@@ -1,68 +1,13 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mic, MicOff, Sparkles, AlertCircle, RotateCcw } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-import { speak, SpeechRecognition } from '../utils';
+import { speak } from '../utils';
+import { useSpeechRecognition } from '../hooks';
 
 export const WonderMode = () => {
   const [status, setStatus] = useState<'idle' | 'listening' | 'thinking' | 'answering' | 'error'>('idle');
-  const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
-
-  useEffect(() => {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = true;
-      rec.lang = 'en-US';
-      setRecognition(rec);
-    }
-    return () => {
-        window.speechSynthesis.cancel();
-    }
-  }, []);
-
-  const handleMicClick = () => {
-    if (!recognition) {
-        alert("Speech recognition not supported");
-        return;
-    }
-
-    if (status === 'listening') {
-        recognition.stop();
-        return;
-    }
-
-    setTranscript('');
-    setResponse('');
-    setStatus('listening');
-    window.speechSynthesis.cancel();
-
-    recognition.onresult = (event) => {
-        const current = event.results[event.results.length - 1][0].transcript;
-        setTranscript(current);
-    };
-
-    recognition.onerror = () => {
-        setStatus('error');
-    };
-
-    recognition.onend = () => {
-        if (transcript.length > 2) {
-             askGemini(transcript);
-        } else {
-             setStatus('idle');
-        }
-    };
-
-    try {
-        recognition.start();
-    } catch(e) {
-        setStatus('error');
-    }
-  };
 
   const askGemini = async (query: string) => {
       setStatus('thinking');
@@ -85,6 +30,54 @@ export const WonderMode = () => {
           console.error(e);
           setStatus('error');
       }
+  };
+
+  const { isListening, transcript, start, stop, isSupported, setTranscript } = useSpeechRecognition({
+      onStart: () => {
+          setStatus('listening');
+          setResponse('');
+          window.speechSynthesis.cancel();
+      },
+      onEnd: () => {
+          // Check transcript from state when recording ends
+          // Note: We use a small timeout or check the state directly. 
+          // Since onEnd fires after listening, we need to capture the *last* transcript.
+          // However, React state might be stale in this callback if not careful.
+          // In this architecture, we rely on the `transcript` variable from the hook which updates on each result.
+          // But inside onEnd, `transcript` might refer to the closure value.
+          // Actually, we can check the transcript length in the render or use a ref if needed.
+          // Simpler approach: Just trigger based on status change in useEffect or check here if we trust the closure.
+          // Better: Use the onResult callback for final results? No, WonderMode often relies on the user stopping manually or silence.
+          
+          // Let's perform the check in a useEffect reacting to isListening changing to false
+      },
+      onError: () => setStatus('error')
+  });
+
+  // Handle End of Listening Logic
+  useEffect(() => {
+      if (status === 'listening' && !isListening) {
+          if (transcript.length > 2) {
+              askGemini(transcript);
+          } else {
+              setStatus('idle');
+          }
+      }
+  }, [isListening, status, transcript]);
+
+
+  const handleMicClick = () => {
+    if (!isSupported) {
+        alert("Speech recognition not supported");
+        return;
+    }
+
+    if (isListening) {
+        stop();
+    } else {
+        setTranscript('');
+        start();
+    }
   };
 
   return (
@@ -118,7 +111,7 @@ export const WonderMode = () => {
 
              {status === 'listening' && (
                  <div className="flex flex-col items-center gap-6 w-full">
-                     <div className="w-24 h-24 md:w-32 md:h-32 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg animate-pulse cursor-pointer" onClick={() => recognition?.stop()}>
+                     <div className="w-24 h-24 md:w-32 md:h-32 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg animate-pulse cursor-pointer" onClick={stop}>
                          <MicOff size={32} className="md:w-12 md:h-12" />
                      </div>
                      <p className="text-xl md:text-2xl font-medium text-gray-500 text-center max-w-lg">

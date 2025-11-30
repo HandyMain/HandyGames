@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRandomItem, shuffleArray, speak } from '../utils';
+import { getRandomItem, shuffleArray, speak, playSound } from '../utils';
 import { Confetti } from '../components';
 import { Hand } from 'lucide-react';
 
@@ -46,6 +47,7 @@ export const CountingMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'me
         setCountProgress(next);
         
         // Visual/Audio Feedback
+        playSound('pop');
         speak(next.toString());
 
         if (next >= target) {
@@ -57,9 +59,11 @@ export const CountingMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'me
     const handleOptionClick = (num: number) => {
         if (num === target) {
             setStatus('correct');
+            playSound('success');
             speak(`That's right! There are ${target} animals.`);
             setTimeout(setupRound, 2000);
         } else {
+            playSound('error');
             speak(`Not quite. Try counting again!`);
             setStatus('counting');
             setCountProgress(0);

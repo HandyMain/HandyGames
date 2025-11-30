@@ -131,3 +131,95 @@ export const MenuButton = ({ title, subtitle, icon, color, onClick }: { title: s
     </div>
   </button>
 );
+
+// --- Responsive Navigation Architecture ---
+
+export const Layout = ({ 
+  children, 
+  sidebar, 
+  mobileDock 
+}: { 
+  children: React.ReactNode;
+  sidebar: React.ReactNode;
+  mobileDock: React.ReactNode;
+}) => {
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-gray-800 selection:bg-purple-300">
+      {/* Desktop Sidebar (>= 768px) */}
+      <aside className="hidden md:flex w-72 flex-col fixed inset-y-0 left-0 z-50 border-r border-gray-200 bg-white shadow-sm">
+        {sidebar}
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 md:ml-72 pb-[100px] md:pb-0 min-h-screen relative w-full overflow-x-hidden">
+        {children}
+      </main>
+
+      {/* Mobile Bottom Dock (< 768px) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        {mobileDock}
+      </nav>
+    </div>
+  );
+};
+
+export const NavItem = ({ 
+  icon: Icon, 
+  label, 
+  isActive, 
+  onClick,
+  badge
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  isActive?: boolean; 
+  onClick: () => void;
+  badge?: number | string;
+}) => (
+  <button
+    onClick={onClick}
+    className={`
+      flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full text-left group relative mb-1
+      ${isActive 
+        ? 'bg-purple-100 text-purple-700 font-bold' 
+        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium'
+      }
+    `}
+  >
+    <Icon size={24} className={isActive ? 'fill-current' : 'group-hover:scale-110 transition-transform'} />
+    <span>{label}</span>
+    {badge ? (
+      <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-purple-200 text-purple-800' : 'bg-gray-100 text-gray-600'}`}>
+        {badge}
+      </span>
+    ) : null}
+  </button>
+);
+
+export const MobileNavItem = ({ 
+  icon: Icon, 
+  label, 
+  isActive, 
+  onClick 
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  isActive?: boolean; 
+  onClick: () => void; 
+}) => (
+  <button
+    onClick={onClick}
+    className={`
+      flex flex-col items-center justify-center flex-1 py-3 transition-all active:scale-95
+      ${isActive 
+        ? 'text-purple-600' 
+        : 'text-gray-400 hover:text-gray-500'
+      }
+    `}
+  >
+    <div className={`p-1 rounded-lg transition-colors ${isActive ? 'bg-purple-100' : 'bg-transparent'}`}>
+      <Icon size={24} className={isActive ? 'fill-current scale-105' : ''} strokeWidth={isActive ? 2.5 : 2} />
+    </div>
+    <span className="text-[10px] font-bold mt-1">{label}</span>
+  </button>
+);
