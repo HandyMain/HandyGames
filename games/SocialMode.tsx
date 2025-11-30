@@ -7,24 +7,31 @@ import { Confetti } from '../components';
 
 // Defined emotions by difficulty
 const EMOTIONS_EASY = {
-  'Happy': ['😄', '😊', '🥳', '😁'],
-  'Sad': ['😢', '😭', '😞', '🥺'],
-  'Angry': ['😠', '😡', '😤', '😒'],
+  'Happy': ['😄', '😊', '🥳', '😁', '🙂'],
+  'Sad': ['😢', '😭', '😞', '🥺', '☹️'],
+  'Angry': ['😠', '😡', '😤', '😒', '👿'],
+  'Silly': ['🤪', '😜', '😝', '🤡', '👻'],
+  'Sleepy': ['😴', '🥱', '😪', '💤', '🛌'],
 };
 
 const EMOTIONS_MEDIUM = {
   ...EMOTIONS_EASY,
-  'Scared': ['😨', '😱', '😰', '🫣'],
-  'Surprised': ['😲', '😮', '🙀', '😯'],
-  'Excited': ['🤩', '🙌', '🎉', '🤸'],
+  'Scared': ['😨', '😱', '😰', '🫣', '😖'],
+  'Surprised': ['😲', '😮', '🙀', '😯', '🤯'],
+  'Excited': ['🤩', '🙌', '🎉', '🤸', '💃'],
+  'Confused': ['😕', '😵‍💫', '❓', '🤔', '🤷'],
+  'Annoyed': ['🙄', '😑', '😤', '🤦', '😒'],
+  'Sick': ['🤢', '🤮', '🤒', '🤕', '🤧'],
 };
 
 const EMOTIONS_HARD = {
   ...EMOTIONS_MEDIUM,
-  'Bored': ['😴', '🥱', '😐', '😑'],
-  'Embarrassed': ['😳', '🫣', '🙈', '😖'],
-  'Love': ['🥰', '😍', '❤️', '🤗'],
-  'Jealous': ['😒', '😤', '😠', '😑'],
+  'Bored': ['😐', '😶', '🫥', '🫠', '😒'],
+  'Embarrassed': ['😳', '🫣', '🙈', '😖', '🥵'],
+  'Love': ['🥰', '😍', '❤️', '🤗', '💝'],
+  'Jealous': ['😒', '😠', '😑', '😤', '😒'],
+  'Proud': ['😎', '😌', '🏆', '🥇', '💪'],
+  'Nervous': ['😬', '😰', '😓', '😟', '🤏'],
 };
 
 const PRIZES = [
@@ -83,7 +90,7 @@ export const SocialMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
         model: 'gemini-2.5-flash',
         contents: `Generate a short, simple social scenario for a child where someone feels a specific emotion.
                    Difficulty Level: ${difficulty} (Easy=Basic, Hard=Nuanced).
-                   The emotion MUST be one of: ${emotionKeys.join(', ')}.
+                   The emotion MUST be one of these exact words: ${emotionKeys.join(', ')}.
                    Keep the text under 20 words.
                    IMPORTANT: Do NOT use these previous scenarios: ${JSON.stringify(recentHistory)}.
                    Generate a NEW scenario.`,

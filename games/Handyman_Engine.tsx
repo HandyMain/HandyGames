@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, RotateCcw, ArrowRight, Settings, Fan, Flower2, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { CheckCircle2, RotateCcw, ChevronDown, ChevronUp, RefreshCw, Zap } from 'lucide-react';
 import { Confetti } from '../components';
 import { speak } from '../utils';
 import { JobDef, TOOLS, ToolId, ActionType } from './Handyman_Data';
@@ -162,49 +162,87 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
     // --- Views ---
 
     const renderSideView = () => {
-        const isTightening = currentStep.actionType === 'tighten';
-        
-        // Visualization Physics:
-        // Screw Length = 100 units.
-        // If Tightening: Start at -50 (sticking out), End at 0 (flush).
-        // If Loosening: Start at 0 (flush), End at -50 (sticking out).
-        
-        let screwOffset = 0;
-        if (isTightening) {
-            screwOffset = -50 + (progress / 100) * 50; 
-        } else {
-            screwOffset = 0 - (progress / 100) * 50;
+        // --- LIGHT JOB VISUALS ---
+        if (job.id === 'light') {
+            const isTightening = currentStep.actionType === 'tighten';
+            // Bulb Physics:
+            // Tighten: Starts at offset 100 (low), moves to 0 (high/in socket)
+            // Loosen: Starts at offset 0 (high), moves to 100 (low)
+            let bulbOffset = 0;
+            if (isTightening) bulbOffset = 100 - progress;
+            else bulbOffset = progress;
+
+            return (
+                <div className="relative w-full h-full flex flex-col items-center bg-slate-900">
+                    {/* Ceiling */}
+                    <div className="w-full h-16 bg-slate-800 border-b-8 border-slate-700 relative z-20 flex justify-center">
+                        {/* Socket */}
+                        <div className="w-16 h-8 bg-slate-300 rounded-b-lg border-x-4 border-b-4 border-slate-400 absolute top-full"></div>
+                    </div>
+
+                    {/* Bulb Container */}
+                    <div className="absolute top-24 z-10 flex flex-col items-center transition-all duration-75" style={{ transform: `translateY(${bulbOffset}px)` }}>
+                        {/* Bulb Stem */}
+                        <div className="w-10 h-10 bg-gray-300 border-2 border-gray-400">
+                            {/* Threads */}
+                            <div className="w-full h-2 bg-gray-400/50 mt-1 transform -rotate-12"></div>
+                            <div className="w-full h-2 bg-gray-400/50 mt-1 transform -rotate-12"></div>
+                            <div className="w-full h-2 bg-gray-400/50 mt-1 transform -rotate-12"></div>
+                        </div>
+                        {/* Bulb Glass */}
+                        <div className="w-24 h-24 bg-yellow-100 rounded-full -mt-2 border-4 border-yellow-200/50 shadow-[0_0_50px_rgba(253,224,71,0.2)] relative">
+                            {/* Filament */}
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-8 h-8 border-t-2 border-orange-400 rounded-full opacity-50"></div>
+                        </div>
+                    </div>
+
+                    {/* Tool (Screwdriver) - Comes from BOTTOM */}
+                    {selectedTool === 'screwdriver' && (
+                        <div 
+                            className="absolute bottom-0 z-30 flex flex-col items-center origin-center"
+                            style={{ 
+                                transform: `translateY(${bulbOffset * 0.8}px) rotate(${rotation}deg)`,
+                                bottom: '20%' // Position near center
+                            }}
+                        >
+                            {/* Shaft */}
+                            <div className="w-4 h-32 bg-gray-400 border-x-2 border-gray-500"></div>
+                            {/* Handle */}
+                            <div className="w-12 h-32 bg-orange-500 rounded-full border-4 border-orange-700 -mt-1">
+                                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         }
+
+        // --- STANDARD VISUALS (SHELF/WOOD) ---
+        const isTightening = currentStep.actionType === 'tighten';
+        let screwOffset = 0;
+        if (isTightening) screwOffset = -50 + (progress / 100) * 50; 
+        else screwOffset = 0 - (progress / 100) * 50;
 
         return (
             <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-800">
                 {/* Wood/Wall Cross Section */}
                 <div className="w-full max-w-md h-64 bg-[#5D4037] border-t-8 border-[#3E2723] relative flex justify-center shadow-2xl overflow-visible z-10">
                     <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]"></div>
-                    
-                    {/* The Hole in the wood */}
                     <div className="w-12 h-32 bg-black/40 mt-0 border-x border-black/20"></div>
                 </div>
 
                 {/* The Screw & Tool Container */}
-                {/* Positioned relative to the top of the wood block */}
                 <div 
                     className="absolute z-20 flex flex-col items-center transition-all duration-75 ease-linear"
-                    style={{ 
-                        // The 'wood' top edge is roughly center screen. 
-                        // We translate this container based on screwOffset.
-                        top: `calc(50% - 32px + ${screwOffset}px)`, 
-                    }}
+                    style={{ top: `calc(50% - 32px + ${screwOffset}px)` }}
                 >
-                    {/* Tool (Drill/Driver) - Sits ON TOP of screw head */}
+                    {/* Tool (Drill/Driver) */}
                     {selectedTool && (
                         <div 
                             className="absolute bottom-full mb-0 flex flex-col items-center origin-bottom"
                             style={{ transform: `rotate(${rotation}deg)` }}
                         >
-                            {/* Bit */}
                             <div className="w-3 h-12 bg-gray-400"></div>
-                            {/* Body */}
                             {selectedTool === 'drill' ? (
                                 <div className="w-24 h-32 bg-yellow-500 rounded-lg border-4 border-yellow-700 relative -mb-4">
                                     <div className="absolute top-1/2 -left-6 w-6 h-16 bg-yellow-600 rounded-l-md"></div>
@@ -253,17 +291,30 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
     const renderTopView = () => (
         <div className="z-10 w-full h-full flex items-center justify-center p-8 pb-32 scale-90 md:scale-100">
             {job.id === 'shelf' && renderShelf()}
+            
+            {job.id === 'light' && (
+                <div className="relative w-64 h-64 bg-slate-800 rounded-full border-8 border-slate-700 flex items-center justify-center shadow-2xl">
+                     {/* The Bulb (Top Down) */}
+                     <div className="w-40 h-40 bg-yellow-100 rounded-full shadow-[0_0_60px_rgba(253,224,71,0.1)] flex items-center justify-center relative">
+                        {/* Glass Reflections */}
+                        <div className="absolute top-4 right-4 w-8 h-8 bg-white rounded-full opacity-40"></div>
+                        {/* Filament Center */}
+                        <div className="w-12 h-12 border-4 border-orange-300 rounded-full opacity-20"></div>
+                     </div>
+                </div>
+            )}
+
             {job.id === 'leak' && (
                 <div className="relative w-64 h-64 bg-slate-400 rounded-full border-8 border-slate-500 flex items-center justify-center shadow-inner">
                      <div className="w-32 h-32 bg-yellow-600 rounded-full border-8 border-yellow-800 shadow-lg" style={{ transform: `rotate(${nutRotation}deg)` }}>
                         <div className="w-full h-4 bg-yellow-800 absolute top-1/2 -translate-y-1/2"></div>
                      </div>
-                     {/* Water Spray */}
                      {progress < 100 && (
                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-10 h-32 bg-blue-400/50 blur-md rounded-full animate-pulse origin-bottom" style={{ transform: `scaleY(${1 - progress/100})` }}></div>
                      )}
                 </div>
             )}
+            
             {job.id === 'hole' && (
                 <div className="w-full h-full bg-stone-200 flex items-center justify-center relative">
                     <div className="w-48 h-48 bg-black/80 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative overflow-hidden">
@@ -323,7 +374,6 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
                     >
                         <div className="border-4 border-blue-400/50 w-[90%] h-[60%] rounded-3xl relative overflow-hidden shadow-2xl pointer-events-none">
                             <div className="absolute top-0 left-0 w-full h-1 bg-red-500 shadow-[0_0_20px_#ef4444] animate-[scan_2s_linear_infinite]"></div>
-                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-blue-600/90 text-white px-6 py-2 rounded-full font-mono text-xl animate-pulse whitespace-nowrap">HOLD TO SCAN</div>
                             {/* Progress Bar */}
                             <div className="absolute top-4 left-1/2 -translate-x-1/2 w-64 h-4 bg-black/50 rounded-full overflow-hidden border border-white/30">
                                 <div className="h-full bg-green-500 transition-all duration-75" style={{ width: `${progress}%` }}></div>
@@ -343,7 +393,7 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
                             onTouchEnd={(e) => handleActionEnd(e)}
                             className="w-24 h-24 bg-white rounded-full shadow-xl border-4 border-slate-200 flex items-center justify-center active:scale-95 active:bg-slate-100 touch-none"
                         >
-                            <RefreshCw size={40} className="scale-x-[-1] text-slate-700" /> {/* Flip for CCW */}
+                            <RefreshCw size={40} className="scale-x-[-1] text-slate-700" />
                         </button>
                         
                         <div className="flex flex-col items-center justify-center text-white font-black drop-shadow-md pointer-events-none">
@@ -366,8 +416,8 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
                     </div>
                 )}
 
-                {/* Generic Hold Controls (Rub/Tap/Hold) */}
-                {(currentStep.actionType === 'hold' || currentStep.actionType === 'rub' || currentStep.actionType === 'tap') && selectedTool === currentStep.tool && !jobComplete && (
+                {/* Generic Hold Controls (Rub/Tap/Hold/Scan) */}
+                {(currentStep.actionType === 'hold' || currentStep.actionType === 'rub' || currentStep.actionType === 'tap' || currentStep.actionType === 'scan') && selectedTool === currentStep.tool && !jobComplete && (
                     <div className="absolute bottom-32 animate-bounce z-30 pointer-events-auto touch-none">
                         <button 
                             onMouseDown={(e) => handleActionStart(e)} 
@@ -377,7 +427,7 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
                             onTouchEnd={(e) => handleActionEnd(e)}
                             className="bg-white/90 text-slate-900 px-12 py-6 rounded-full font-black shadow-2xl border-4 border-slate-900 flex items-center gap-2 text-2xl active:scale-95 select-none"
                         >
-                            HOLD TO WORK
+                            {currentStep.actionType === 'scan' ? 'HOLD TO SCAN' : 'HOLD TO WORK'}
                         </button>
                     </div>
                 )}
@@ -420,6 +470,15 @@ export const HandymanEngine = ({ job, onBack, onUnlock }: { job: JobDef, onBack:
                     </div>
                 </div>
             </div>
+            
+            <style>{`
+                @keyframes scan {
+                    0% { top: 0%; opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { top: 100%; opacity: 0; }
+                }
+            `}</style>
         </div>
     );
 };
