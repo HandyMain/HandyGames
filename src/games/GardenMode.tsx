@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { Coins, Warehouse, Truck, Shovel, Droplets, Hammer, Sprout, PawPrint, X } from 'lucide-react';
+import { Coins, Warehouse, Truck, ChevronDown, ChevronUp, Shovel, Droplets } from 'lucide-react';
 import { speak } from '../utils';
 import { 
     ITEMS, ANIMALS, ItemId, AnimalId, Plot, BarnSlot, Upgrades, 
-    ItemDef, AnimalDef
+    PlotState, ItemDef, AnimalDef
 } from './garden/data';
 import { FarmView } from './garden/FarmView';
+import { BarnView } from './garden/BarnView';
 import { MarketView } from './garden/MarketView';
 
 interface Particle {
@@ -16,8 +16,6 @@ interface Particle {
     content: string;
     type: 'drop' | 'float' | 'star' | 'gold';
 }
-
-type ToolCategory = 'tools' | 'seeds' | 'animals' | null;
 
 export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medium' | 'hard' }) => {
     // --- STATE ---
@@ -34,9 +32,9 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
     });
 
     // UI
-    const [marketOpen, setMarketOpen] = useState(false);
+    const [activeView, setActiveView] = useState<'farm' | 'barn' | 'market'>('farm');
     const [selectedTool, setSelectedTool] = useState<string>('hoe'); 
-    const [activeCategory, setActiveCategory] = useState<ToolCategory>(null); // Start closed
+    const [toolbeltOpen, setToolbeltOpen] = useState(true);
     const [particles, setParticles] = useState<Particle[]>([]);
 
     // --- GAME LOOP ---
@@ -94,7 +92,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
         }, tickRate);
 
         return () => clearInterval(timer);
-    }, [difficulty, upgrades]); 
+    }, [difficulty, upgrades, inventory]); 
 
     // --- HELPERS ---
 
@@ -120,7 +118,7 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
         const newPlots = [...plots];
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         
-        // Harvest (Always possible regardless of tool)
+        // Harvest
         if (plot.crop && plot.stage === 3) {
             updateInv(plot.crop, 1);
             spawnParticle(ITEMS[plot.crop].emoji, rect.left + rect.width/2, rect.top, 'star');
@@ -295,31 +293,29 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
         return acc + ((item?.sell || 0) * count);
     }, 0);
 
-    const toggleCategory = (cat: ToolCategory) => {
-        if (activeCategory === cat) {
-            setActiveCategory(null);
-        } else {
-            setActiveCategory(cat);
-        }
-    };
-
     return (
-        <div className="w-full h-full relative overflow-hidden select-none bg-green-200">
+        <div className="w-full h-full bg-gradient-to-b from-sky-300 via-sky-200 to-green-100 relative overflow-hidden select-none">
             
+            {/* Background Atmosphere */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-10 left-10 text-6xl opacity-80 animate-[floatCloud_20s_linear_infinite]">☁️</div>
+                <div className="absolute top-20 right-20 text-5xl opacity-60 animate-[floatCloud_25s_linear_infinite_reverse]">☁️</div>
+                <div className="absolute top-40 left-1/3 text-4xl opacity-40 animate-[floatCloud_30s_linear_infinite]">☁️</div>
+            </div>
+
             {/* 3D WORLD */}
             <FarmView 
-                plots={plots}
-                barn={barn} 
+                plots={plots} 
+                activeView={activeView} 
                 onPlotClick={handlePlotClick}
-                onBarnClick={handleBarnClick}
-                onOpenMarket={() => setMarketOpen(true)}
+                onViewChange={setActiveView}
             />
 
             {/* PARTICLES */}
             {particles.map(p => (
                 <div 
                     key={p.id}
-                    className="fixed pointer-events-none text-xl md:text-2xl font-bold animate-[floatUp_1s_ease-out_forwards] z-50"
+                    className="fixed pointer-events-none text-2xl font-bold animate-[floatUp_1s_ease-out_forwards] z-50"
                     style={{ left: p.x, top: p.y, color: p.type === 'star' ? '#FBBF24' : p.type === 'drop' ? '#60A5FA' : '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
                 >
                     {p.content}
@@ -327,135 +323,89 @@ export const GardenMode = ({ difficulty = 'easy' }: { difficulty: 'easy' | 'medi
             ))}
 
             {/* HUD */}
-            <div className="fixed top-2 md:top-4 left-0 w-full flex justify-center z-40 pointer-events-none px-2 md:px-4">
-                <div className="bg-white/90 backdrop-blur-md rounded-full px-3 py-1.5 md:px-4 md:py-2 flex gap-3 md:gap-4 shadow-xl border border-green-100 pointer-events-auto items-center">
-                    <div className="flex items-center gap-1 md:gap-2 min-w-[60px] md:min-w-[80px]">
-                        <Coins className="text-yellow-500 w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-lg md:text-xl font-black text-slate-800">{coins}</span>
+            <div className="fixed top-4 left-0 w-full flex justify-center z-40 pointer-events-none px-4">
+                <div className="bg-white/90 backdrop-blur-md rounded-full px-4 py-2 flex gap-4 shadow-xl border-2 border-slate-100 pointer-events-auto items-center">
+                    <div className="flex items-center gap-2 min-w-[80px]">
+                        <Coins className="text-yellow-500" />
+                        <span className="text-xl font-black text-slate-800">{coins}</span>
                     </div>
                     
                     <button 
-                        onClick={() => setMarketOpen(true)}
-                        className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 rounded-full font-bold text-xs md:text-sm transition-colors ${totalValue > 0 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
+                        onClick={() => setActiveView(activeView === 'farm' ? 'market' : 'farm')}
+                        className={`flex items-center gap-2 px-3 py-1 rounded-full font-bold text-sm transition-colors ${totalValue > 0 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
                     >
-                        <Warehouse size={14} className="md:w-4 md:h-4" />
+                        <Warehouse size={16} />
                         <span className="hidden md:inline">Value:</span> {totalValue}
                     </button>
 
-                    <div className="w-px h-4 md:h-6 bg-slate-300"></div>
+                    <div className="w-px h-6 bg-slate-300"></div>
 
                     <button 
                         onClick={smartSellAll}
-                        className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 rounded-full font-bold text-xs md:text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                        className="flex items-center gap-2 px-3 py-1 rounded-full font-bold text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
                         title="Sell Surplus Crops & All Products"
                     >
-                        <Truck size={14} className="md:w-4 md:h-4" />
+                        <Truck size={16} />
                         <span className="hidden md:inline">Smart Sell</span>
                     </button>
                 </div>
             </div>
 
-            {/* MARKET OVERLAY */}
-            {marketOpen && (
+            {/* OVERLAYS */}
+            {activeView === 'barn' && (
+                <BarnView 
+                    barn={barn} 
+                    onBarnClick={handleBarnClick} 
+                    onClose={() => setActiveView('farm')}
+                    onExpand={() => handleUpgrade('barnCapacity')}
+                />
+            )}
+
+            {activeView === 'market' && (
                 <MarketView 
                     inventory={inventory}
                     coins={coins}
                     upgrades={upgrades}
                     onSell={handleSell}
                     onUpgrade={handleUpgrade}
-                    onClose={() => setMarketOpen(false)}
+                    onClose={() => setActiveView('farm')}
                 />
             )}
 
-            {/* EXPANDABLE TOOLBELT */}
-            <div className="fixed bottom-0 left-0 right-0 z-30 flex flex-col">
-                
-                {/* Panel Content (Slides Up) */}
-                <div 
-                    className={`bg-white/95 backdrop-blur-xl border-t border-green-100 transition-all duration-300 ease-out overflow-hidden shadow-2xl ${activeCategory ? 'h-48' : 'h-0'}`}
-                >
-                    <div className="p-4 h-full overflow-y-auto no-scrollbar pb- safe">
-                        {activeCategory && (
-                            <div className="flex flex-wrap justify-center gap-4 animate-in slide-in-from-bottom-4">
-                                
-                                {/* TOOLS CATEGORY */}
-                                {activeCategory === 'tools' && (
-                                    <>
-                                        <button onClick={() => setSelectedTool('hoe')} className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center border-4 transition-all ${selectedTool === 'hoe' ? 'bg-amber-100 border-amber-500 scale-105' : 'bg-slate-50 border-slate-200'}`}>
-                                            <Shovel size={32} className="text-amber-800" />
-                                            <span className="text-xs font-bold text-slate-600 mt-1">Hoe</span>
-                                        </button>
-                                        <button onClick={() => setSelectedTool('water')} className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center border-4 transition-all ${selectedTool === 'water' ? 'bg-blue-100 border-blue-500 scale-105' : 'bg-slate-50 border-slate-200'}`}>
-                                            <Droplets size={32} className="text-blue-600" />
-                                            <span className="text-xs font-bold text-slate-600 mt-1">Water</span>
-                                        </button>
-                                    </>
-                                )}
-
-                                {/* SEEDS CATEGORY */}
-                                {activeCategory === 'seeds' && (Object.values(ITEMS) as ItemDef[]).filter(i => i.type === 'crop').map((item) => (
-                                    <button 
-                                        key={item.id} 
-                                        onClick={() => setSelectedTool(item.id)} 
-                                        className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center border-4 transition-all relative ${selectedTool === item.id ? 'bg-green-100 border-green-500 scale-105' : 'bg-white border-slate-200'}`}
-                                    >
-                                        <span className="text-3xl">{item.emoji}</span>
-                                        <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">{item.cost}</span>
-                                        <span className="text-[10px] font-bold text-slate-500 mt-1">{item.name}</span>
-                                    </button>
-                                ))}
-
-                                {/* ANIMALS CATEGORY */}
-                                {activeCategory === 'animals' && (Object.values(ANIMALS) as AnimalDef[]).map((anim) => (
-                                    <button 
-                                        key={anim.id} 
-                                        onClick={() => setSelectedTool(anim.id)} 
-                                        className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center border-4 transition-all relative ${selectedTool === anim.id ? 'bg-orange-100 border-orange-500 scale-105' : 'bg-white border-slate-200'}`}
-                                    >
-                                        <span className="text-3xl">{anim.emoji}</span>
-                                        <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">{anim.cost}</span>
-                                        <span className="text-[10px] font-bold text-slate-500 mt-1">{anim.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        
-                        {/* Close Button Inside Panel */}
-                        <div className="absolute top-2 right-2">
-                            <button onClick={() => setActiveCategory(null)} className="p-2 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200">
-                                <X size={16} />
+            {/* TOOLBELT */}
+            {activeView === 'farm' && (
+                <div className={`fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-green-100 p-2 z-30 transition-transform duration-300 ${toolbeltOpen ? 'translate-y-0' : 'translate-y-[85%]'}`}>
+                    <div className="flex justify-center -mt-6 mb-2">
+                        <button onClick={() => setToolbeltOpen(!toolbeltOpen)} className="bg-white rounded-full p-2 text-green-600 shadow-lg hover:text-green-800">
+                            {toolbeltOpen ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                        </button>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto pb-6 px-4 no-scrollbar">
+                        <button onClick={() => setSelectedTool('hoe')} className={`flex-shrink-0 w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-b-4 transition-all ${selectedTool === 'hoe' ? 'bg-amber-800 text-white border-amber-950 -translate-y-2' : 'bg-slate-100 text-slate-500 border-slate-300'}`}>
+                            <Shovel size={24} />
+                            <span className="text-[10px] font-bold mt-1">Hoe</span>
+                        </button>
+                        <button onClick={() => setSelectedTool('water')} className={`flex-shrink-0 w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-b-4 transition-all ${selectedTool === 'water' ? 'bg-blue-500 text-white border-blue-700 -translate-y-2' : 'bg-blue-50 text-blue-400 border-blue-200'}`}>
+                            <Droplets size={24} />
+                            <span className="text-[10px] font-bold mt-1">Water</span>
+                        </button>
+                        <div className="w-px bg-slate-300 mx-1"></div>
+                        {(Object.values(ITEMS) as ItemDef[]).filter(i => i.type === 'crop').map((item: ItemDef) => (
+                            <button key={item.id} onClick={() => setSelectedTool(item.id)} className={`flex-shrink-0 w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-b-4 transition-all relative ${selectedTool === item.id ? 'bg-green-100 border-green-400 -translate-y-2' : 'bg-white border-slate-200'}`}>
+                                <span className="text-2xl">{item.emoji}</span>
+                                <span className="absolute top-1 right-1 text-[9px] font-bold text-green-700 bg-green-100 px-1 rounded-full">{item.cost}</span>
                             </button>
-                        </div>
+                        ))}
+                        <div className="w-px bg-slate-300 mx-1"></div>
+                        {(Object.values(ANIMALS) as AnimalDef[]).map((anim: AnimalDef) => (
+                            <button key={anim.id} onClick={() => setSelectedTool(anim.id)} className={`flex-shrink-0 w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-b-4 transition-all relative ${selectedTool === anim.id ? 'bg-orange-100 border-orange-400 -translate-y-2' : 'bg-white border-slate-200'}`}>
+                                <span className="text-2xl">{anim.emoji}</span>
+                                <span className="absolute top-1 right-1 text-[9px] font-bold text-orange-700 bg-orange-100 px-1 rounded-full">{anim.cost}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
-
-                {/* Bottom Tabs */}
-                <div className="flex bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-safe">
-                    <button 
-                        onClick={() => toggleCategory('tools')}
-                        className={`flex-1 py-4 flex flex-col items-center gap-1 transition-colors ${activeCategory === 'tools' ? 'bg-slate-100 text-blue-600' : 'text-slate-500'}`}
-                    >
-                        <Hammer size={24} className={activeCategory === 'tools' ? 'fill-current' : ''} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Tools</span>
-                    </button>
-                    
-                    <button 
-                        onClick={() => toggleCategory('seeds')}
-                        className={`flex-1 py-4 flex flex-col items-center gap-1 transition-colors border-x border-slate-100 ${activeCategory === 'seeds' ? 'bg-green-50 text-green-600' : 'text-slate-500'}`}
-                    >
-                        <Sprout size={24} className={activeCategory === 'seeds' ? 'fill-current' : ''} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Seeds</span>
-                    </button>
-                    
-                    <button 
-                        onClick={() => toggleCategory('animals')}
-                        className={`flex-1 py-4 flex flex-col items-center gap-1 transition-colors ${activeCategory === 'animals' ? 'bg-orange-50 text-orange-600' : 'text-slate-500'}`}
-                    >
-                        <PawPrint size={24} className={activeCategory === 'animals' ? 'fill-current' : ''} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Animals</span>
-                    </button>
-                </div>
-            </div>
+            )}
 
             <style>{`
                 @keyframes floatUp {
