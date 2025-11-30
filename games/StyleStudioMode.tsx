@@ -44,7 +44,7 @@ const ACCESSORIES = [
 
 // --- MAIN COMPONENT ---
 
-export const StyleStudioMode = () => {
+export const StyleStudioMode = ({ difficulty = 'easy', onUnlock }: { difficulty: 'easy' | 'medium' | 'hard', onUnlock?: (id: string) => void }) => {
     // Character State
     const [config, setConfig] = useState({
         hair: 1,
@@ -147,8 +147,10 @@ export const StyleStudioMode = () => {
                 Accessory: ${ACCESSORIES[config.acc].name}.
             `;
 
+            const strictness = difficulty === 'hard' ? 'strict and picky' : difficulty === 'medium' ? 'fair' : 'super generous and cheerful';
+
             const prompt = `
-                You are a kind, enthusiastic fashion judge for a kids game.
+                You are a ${strictness} fashion judge for a kids game.
                 Context: ${description}
                 Task: Give a score out of 10 and a 1-sentence funny/nice critique.
                 Format: JSON { "score": number, "comment": "string" }
@@ -160,11 +162,19 @@ export const StyleStudioMode = () => {
                 config: { responseMimeType: "application/json" }
             });
 
-            const result = JSON.parse(response.text || "{}");
-            setScore(result.score || 10);
+            const rawText = response.text || "{}";
+            const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const result = JSON.parse(cleanText);
+            
+            const finalScore = result.score || 10;
+            setScore(finalScore);
             setCritique(result.comment || "You look amazing!");
             setStatus('result');
-            speak(result.comment || "Wow! 10 out of 10!");
+            speak(result.comment || `Wow! ${finalScore} out of 10!`);
+
+            if (finalScore === 10 && onUnlock) {
+                onUnlock('fashionista');
+            }
 
         } catch (e) {
             setScore(10);

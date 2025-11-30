@@ -139,7 +139,7 @@ export const Layout = ({
   sidebar, 
   mobileDock 
 }: { 
-  children: React.ReactNode;
+  children?: React.ReactNode;
   sidebar: React.ReactNode;
   mobileDock: React.ReactNode;
 }) => {

@@ -112,7 +112,7 @@ const App = () => {
 
   // --- Logic ---
   const hasHistory = Object.keys(playCounts).length > 0;
-  const totalPlays = Object.values(playCounts).reduce((a, b) => a + b, 0);
+  const totalPlays = Object.values(playCounts).reduce((a: number, b: number) => a + b, 0);
   
   const sortedByPlays = [...GAMES].sort((a, b) => {
       const countA = playCounts[a.id] || 0;

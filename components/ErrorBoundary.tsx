@@ -1,9 +1,17 @@
 
-import React from 'react';
+import React, { Component, ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 
-export class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  state = { hasError: false };
+interface ErrorBoundaryProps {
+    children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+    hasError: boolean;
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
   render() {
     if (this.state.hasError) {
